@@ -1,5 +1,5 @@
 
-# Robô da Sorte – Sistema Inteligente de Previsão de Jogos da Caixa
+# Robô da Sorte – Geração Inteligente + Simulador de Acertos
 import pandas as pd
 import random
 from collections import Counter
@@ -32,6 +32,14 @@ class JogoCaixa:
             candidatos = list(range(self.faixa[0], self.faixa[1] + 1))
         return sorted(random.sample(candidatos, self.qtd))
 
+    def simular_acertos(self, aposta):
+        resultados = self.dados.iloc[:, -self.qtd:].values.tolist()
+        historico = []
+        for i, concurso in enumerate(resultados):
+            acertos = len(set(aposta) & set(concurso))
+            historico.append((i + 1, acertos))
+        return historico
+
 # Configuração dos jogos
 jogos = {
     "Mega-Sena": {"faixa": (1, 60), "qtd": 6, "csv": "dados/mega_sena.csv"},
@@ -41,18 +49,41 @@ jogos = {
     "Dupla Sena": {"faixa": (1, 50), "qtd": 6, "csv": "dados/dupla_sena.csv"},
 }
 
-# Interface com Streamlit
+# Interface Streamlit
 st.set_page_config(page_title="Robô da Sorte", layout="centered")
 st.title("🤖 Robô da Sorte")
-st.caption("Geração inteligente de apostas para jogos da Caixa")
+st.caption("Geração inteligente + Simulador de acertos")
+
+aba = st.radio("Escolha uma função:", ["🎲 Gerar Aposta Inteligente", "🎯 Simulador de Acertos"])
 
 jogo_escolhido = st.selectbox("Escolha o jogo:", list(jogos.keys()))
+config = jogos[jogo_escolhido]
 
-if st.button("🎲 Gerar Aposta Inteligente"):
-    config = jogos[jogo_escolhido]
-    if os.path.exists(config['csv']):
-        jogo = JogoCaixa(jogo_escolhido, config["faixa"], config["qtd"], config["csv"])
-        aposta = jogo.gerar_aposta_inteligente()
-        st.success(f"Aposta sugerida para {jogo_escolhido}: {aposta}")
-    else:
-        st.error(f"Arquivo CSV não encontrado para {jogo_escolhido} - {config['csv']}")
+if aba == "🎲 Gerar Aposta Inteligente":
+    if st.button("Gerar Aposta"):
+        if os.path.exists(config['csv']):
+            jogo = JogoCaixa(jogo_escolhido, config["faixa"], config["qtd"], config["csv"])
+            aposta = jogo.gerar_aposta_inteligente()
+            st.success(f"Aposta sugerida para {jogo_escolhido}: {aposta}")
+        else:
+            st.error(f"Arquivo CSV não encontrado: {config['csv']}")
+
+elif aba == "🎯 Simulador de Acertos":
+    dezenas = st.text_input(f"Digite sua aposta ({config['qtd']} números separados por vírgula):")
+    if st.button("Simular Acertos"):
+        try:
+            numeros = [int(n.strip()) for n in dezenas.split(",")]
+            if len(numeros) != config["qtd"]:
+                st.warning(f"Você deve digitar exatamente {config['qtd']} números.")
+            else:
+                jogo = JogoCaixa(jogo_escolhido, config["faixa"], config["qtd"], config["csv"])
+                resultados = jogo.simular_acertos(numeros)
+                acertos_relevantes = [f"Concurso {c}: {a} acertos" for c, a in resultados if a >= config["qtd"] - 2]
+                if acertos_relevantes:
+                    st.info("Acertos relevantes encontrados:")
+                    for linha in acertos_relevantes:
+                        st.write("- " + linha)
+                else:
+                    st.error("Nenhum acerto relevante encontrado.")
+        except Exception as e:
+            st.error("Erro ao processar os números. Verifique o formato.")
