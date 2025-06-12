@@ -1,5 +1,4 @@
-
-# Robô da Sorte – IA, Simulador e Gráficos de Frequência
+# Robô da Sorte – IA, Simulador, Gráficos e IA Evolutiva
 import pandas as pd
 import random
 from collections import Counter
@@ -41,7 +40,39 @@ class JogoCaixa:
             historico.append((i + 1, acertos))
         return historico
 
-# Configuração dos jogos
+# IA Evolutiva
+def gerar_aposta_evolutiva(jogo: JogoCaixa, geracoes=30, populacao_inicial=100, elite=10, mutacao=0.2):
+    todos_numeros = list(range(jogo.faixa[0], jogo.faixa[1] + 1))
+
+    def gerar_individuo():
+        return sorted(random.sample(todos_numeros, jogo.qtd))
+
+    def fitness(individuo):
+        resultados = jogo.simular_acertos(individuo)
+        return sum(a for _, a in resultados[-30:])  # soma dos acertos nos últimos 30 concursos
+
+    populacao = [gerar_individuo() for _ in range(populacao_inicial)]
+
+    for _ in range(geracoes):
+        populacao = sorted(populacao, key=fitness, reverse=True)
+        nova_geracao = populacao[:elite]
+        while len(nova_geracao) < populacao_inicial:
+            pai = random.choice(populacao[:50])
+            filho = pai[:]
+            if random.random() < mutacao:
+                i = random.randint(0, jogo.qtd - 1)
+                novo_num = random.choice(todos_numeros)
+                while novo_num in filho:
+                    novo_num = random.choice(todos_numeros)
+                filho[i] = novo_num
+                filho = sorted(filho)
+            nova_geracao.append(filho)
+        populacao = nova_geracao
+
+    melhor = max(populacao, key=fitness)
+    return melhor
+
+# Configurações
 jogos = {
     "Mega-Sena": {"faixa": (1, 60), "qtd": 6, "csv": "dados/mega_sena.csv"},
     "Quina": {"faixa": (1, 80), "qtd": 5, "csv": "dados/quina.csv"},
@@ -50,12 +81,16 @@ jogos = {
     "Dupla Sena": {"faixa": (1, 50), "qtd": 6, "csv": "dados/dupla_sena.csv"},
 }
 
-# Interface Streamlit
 st.set_page_config(page_title="Robô da Sorte", layout="centered")
 st.title("🤖 Robô da Sorte")
-st.caption("Geração inteligente • Simulador de acertos • Frequência de dezenas")
+st.caption("Geração inteligente • Simulador de acertos • Gráficos • IA Evolutiva")
 
-aba = st.radio("Escolha uma função:", ["🎲 Gerar Aposta Inteligente", "🎯 Simulador de Acertos", "📊 Gráficos de Frequência"])
+aba = st.radio("Escolha uma função:", [
+    "🎲 Gerar Aposta Inteligente",
+    "🎯 Simulador de Acertos",
+    "📊 Gráficos de Frequência",
+    "🧠 IA Evolutiva"
+])
 
 jogo_escolhido = st.selectbox("Escolha o jogo:", list(jogos.keys()))
 config = jogos[jogo_escolhido]
@@ -100,5 +135,10 @@ if os.path.exists(config["csv"]):
         ax.set_ylabel("Frequência")
         st.pyplot(fig)
 
+    elif aba == "🧠 IA Evolutiva":
+        st.subheader("Aposta gerada com IA Evolutiva")
+        if st.button("Gerar aposta com IA"):
+            aposta = gerar_aposta_evolutiva(jogo)
+            st.success(f"Aposta evoluída para {jogo_escolhido}: {aposta}")
 else:
     st.error(f"Arquivo CSV não encontrado: {config['csv']}")
