@@ -1,10 +1,11 @@
 
-# Robô da Sorte – Geração Inteligente + Simulador de Acertos
+# Robô da Sorte – IA, Simulador e Gráficos de Frequência
 import pandas as pd
 import random
 from collections import Counter
 import os
 import streamlit as st
+import matplotlib.pyplot as plt
 
 class JogoCaixa:
     def __init__(self, nome, faixa_numeros, numeros_por_jogo, caminho_csv):
@@ -52,38 +53,52 @@ jogos = {
 # Interface Streamlit
 st.set_page_config(page_title="Robô da Sorte", layout="centered")
 st.title("🤖 Robô da Sorte")
-st.caption("Geração inteligente + Simulador de acertos")
+st.caption("Geração inteligente • Simulador de acertos • Frequência de dezenas")
 
-aba = st.radio("Escolha uma função:", ["🎲 Gerar Aposta Inteligente", "🎯 Simulador de Acertos"])
+aba = st.radio("Escolha uma função:", ["🎲 Gerar Aposta Inteligente", "🎯 Simulador de Acertos", "📊 Gráficos de Frequência"])
 
 jogo_escolhido = st.selectbox("Escolha o jogo:", list(jogos.keys()))
 config = jogos[jogo_escolhido]
 
-if aba == "🎲 Gerar Aposta Inteligente":
-    if st.button("Gerar Aposta"):
-        if os.path.exists(config['csv']):
-            jogo = JogoCaixa(jogo_escolhido, config["faixa"], config["qtd"], config["csv"])
+if os.path.exists(config["csv"]):
+    jogo = JogoCaixa(jogo_escolhido, config["faixa"], config["qtd"], config["csv"])
+
+    if aba == "🎲 Gerar Aposta Inteligente":
+        if st.button("Gerar Aposta"):
             aposta = jogo.gerar_aposta_inteligente()
             st.success(f"Aposta sugerida para {jogo_escolhido}: {aposta}")
-        else:
-            st.error(f"Arquivo CSV não encontrado: {config['csv']}")
 
-elif aba == "🎯 Simulador de Acertos":
-    dezenas = st.text_input(f"Digite sua aposta ({config['qtd']} números separados por vírgula):")
-    if st.button("Simular Acertos"):
-        try:
-            numeros = [int(n.strip()) for n in dezenas.split(",")]
-            if len(numeros) != config["qtd"]:
-                st.warning(f"Você deve digitar exatamente {config['qtd']} números.")
-            else:
-                jogo = JogoCaixa(jogo_escolhido, config["faixa"], config["qtd"], config["csv"])
-                resultados = jogo.simular_acertos(numeros)
-                acertos_relevantes = [f"Concurso {c}: {a} acertos" for c, a in resultados if a >= config["qtd"] - 2]
-                if acertos_relevantes:
-                    st.info("Acertos relevantes encontrados:")
-                    for linha in acertos_relevantes:
-                        st.write("- " + linha)
+    elif aba == "🎯 Simulador de Acertos":
+        dezenas = st.text_input(f"Digite sua aposta ({config['qtd']} números separados por vírgula):")
+        if st.button("Simular Acertos"):
+            try:
+                numeros = [int(n.strip()) for n in dezenas.split(",")]
+                if len(numeros) != config["qtd"]:
+                    st.warning(f"Você deve digitar exatamente {config['qtd']} números.")
                 else:
-                    st.error("Nenhum acerto relevante encontrado.")
-        except Exception as e:
-            st.error("Erro ao processar os números. Verifique o formato.")
+                    resultados = jogo.simular_acertos(numeros)
+                    acertos_relevantes = [f"Concurso {c}: {a} acertos" for c, a in resultados if a >= config["qtd"] - 2]
+                    if acertos_relevantes:
+                        st.info("Acertos relevantes encontrados:")
+                        for linha in acertos_relevantes:
+                            st.write("- " + linha)
+                    else:
+                        st.error("Nenhum acerto relevante encontrado.")
+            except Exception as e:
+                st.error("Erro ao processar os números. Verifique o formato.")
+
+    elif aba == "📊 Gráficos de Frequência":
+        st.subheader(f"📈 Frequência das Dezenas - {jogo_escolhido}")
+        freq = jogo.analisar_frequencia()
+        numeros = list(range(config["faixa"][0], config["faixa"][1] + 1))
+        contagens = [freq.get(n, 0) for n in numeros]
+
+        fig, ax = plt.subplots(figsize=(10, 4))
+        ax.bar(numeros, contagens, color="skyblue")
+        ax.set_title("Frequência de Dezenas Sorteadas")
+        ax.set_xlabel("Dezena")
+        ax.set_ylabel("Frequência")
+        st.pyplot(fig)
+
+else:
+    st.error(f"Arquivo CSV não encontrado: {config['csv']}")
