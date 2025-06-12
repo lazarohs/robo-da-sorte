@@ -29,17 +29,22 @@ dados = buscar_resultado(jogos_disponiveis[jogo_escolhido])
 
 if dados:
     st.subheader(f"Último resultado da {jogo_escolhido}")
-    st.write(f"Concurso Nº: {dados['concurso']}")
-    st.write(f"Data do sorteio: {dados['data']}")
-    st.success(f"Números sorteados: {', '.join(str(n) for n in dados['numeros'])}")
+    st.write(f"Concurso Nº: {dados.get('concurso')}")
+    st.write(f"Data do sorteio: {dados.get('data')}")
 
-    # Salvar em CSV (opcional)
+    # Detectar o campo correto com os números sorteados
+    numeros = dados.get("numeros") or dados.get("listaDezenas") or dados.get("dezenas") or []
+    if isinstance(numeros, str):
+        numeros = numeros.split(",")
+
+    st.success(f"Números sorteados: {', '.join(str(n).strip() for n in numeros)}")
+
     if st.button("Salvar resultado localmente"):
         df = pd.DataFrame([{
             "jogo": jogo_escolhido,
-            "concurso": dados["concurso"],
-            "data": dados["data"],
-            "numeros": ", ".join(str(n) for n in dados["numeros"])
+            "concurso": dados.get("concurso"),
+            "data": dados.get("data"),
+            "numeros": ", ".join(str(n).strip() for n in numeros)
         }])
         df.to_csv(f"{jogos_disponiveis[jogo_escolhido]}_resultados.csv", index=False)
         st.success("Resultado salvo com sucesso!")
