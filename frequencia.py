@@ -1,16 +1,11 @@
-# Módulo de gráficos de frequência
-
-def gerar_grafico_frequencia(jogo):
-    pass  # implementar gráficos
 import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
 
 def gerar_grafico_frequencia(jogo):
-    # Simulação de dados de concursos da Mega-Sena
     if jogo == "Mega-Sena":
         numeros = list(range(1, 61))
-        freq_simulada = [abs((i * 17) % 30 - 15) + i % 5 for i in numeros]  # Frequência simulada
+        freq_simulada = [abs((i * 17) % 30 - 15) + i % 5 for i in numeros]
 
         df = pd.DataFrame({
             'Número': numeros,
@@ -24,6 +19,5 @@ def gerar_grafico_frequencia(jogo):
         ax.set_ylabel("Frequência")
         ax.set_title("Números mais sorteados (simulação)")
         st.pyplot(fig)
-
     else:
         st.warning("Gráfico de frequência ainda não implementado para esse jogo.")
