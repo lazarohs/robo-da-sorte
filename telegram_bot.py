@@ -1,4 +1,3 @@
-# Módulo de integração com Telegram
-
+# Módulo de integração com Telegram (em breve implementação)
 def enviar_para_telegram(mensagem):
-    pass  # implementar envio via Telegram
+    pass
