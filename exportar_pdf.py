@@ -1,4 +1,3 @@
-# Módulo de exportação para PDF
-
+# Módulo de exportação para PDF (em breve implementação)
 def exportar_para_pdf(jogo, apostas):
-    pass  # implementar exportação PDF
+    pass
