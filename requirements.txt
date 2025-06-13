@@ -1,3 +1,7 @@
 streamlit
-requests
+matplotlib
 pandas
+numpy
+requests
+reportlab
+python-telegram-bot

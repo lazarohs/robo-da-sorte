@@ -1,102 +1,41 @@
 import streamlit as st
-import requests
-import pandas as pd
-import random
 
 st.set_page_config(page_title="Robô da Sorte", layout="wide")
-st.title("🤖 Robô da Sorte")
 
-# --- Funções utilitárias ---
+# --- TÍTULO PRINCIPAL ---
+st.markdown("""
+    <h1 style='text-align: center; color: #004080;'>🤖 Robô da Sorte</h1>
+    <h4 style='text-align: center; color: #666;'>Seu assistente inteligente para apostas nas Loterias Caixa</h4>
+    <hr style='border: 1px solid #004080;' />
+""", unsafe_allow_html=True)
 
-def buscar_resultado(jogo="megasena"):
-    """Busca o último resultado do jogo especificado usando a API pública."""
-    url = f"https://loteriascaixa-api.herokuapp.com/api/{jogo}/latest"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            return None
-    except:
-        return None
+# --- MENU LATERAL ---
+st.sidebar.markdown("## 🎯 Escolha o jogo")
+jogo = st.sidebar.selectbox(
+    "Tipo de Loteria:",
+    ["Mega-Sena", "Quina", "Lotofácil", "Lotomania", "Timemania", "Dia de Sorte", "Super Sete"]
+)
 
-def gerar_jogo(jogo, dezenas_freq=None):
-    """Gera uma combinação aleatória ou com pesos com base na frequência."""
-    if jogo == "Mega-Sena":
-        total_numeros = 60
-        numeros_por_jogo = 6
-    elif jogo == "Quina":
-        total_numeros = 80
-        numeros_por_jogo = 5
-    elif jogo == "Lotofácil":
-        total_numeros = 25
-        numeros_por_jogo = 15
-    else:
-        return []
+st.sidebar.markdown("---")
+st.sidebar.markdown("## ⚙️ Funcionalidades")
+func_selecionada = st.sidebar.radio(
+    "O que deseja fazer?",
+    [
+        "📊 Ver estatísticas (Gráficos de frequência)",
+        "🎰 Simular apostas anteriores",
+        "🧠 Gerar jogo com IA",
+        "📄 Exportar para PDF",
+        "📲 Enviar por Telegram"
+    ]
+)
 
-    if dezenas_freq:
-        pesos = [dezenas_freq.get(str(n).zfill(2), 1) for n in range(1, total_numeros + 1)]
-        jogo = random.choices(range(1, total_numeros + 1), weights=pesos, k=numeros_por_jogo)
-    else:
-        jogo = random.sample(range(1, total_numeros + 1), numeros_por_jogo)
-    
-    return sorted(jogo)
+# --- PAINEL PRINCIPAL ---
+st.markdown(f"""
+    <div style='padding: 10px; background-color: #f2f2f2; border-radius: 10px;'>
+        <h2 style='color: #004080;'>🎮 Jogo selecionado: {jogo}</h2>
+        <p style='color: #333;'>Abaixo você poderá explorar dados, gerar apostas inteligentes e muito mais!</p>
+    </div>
+""", unsafe_allow_html=True)
 
-# --- Interface ---
-
-aba = st.sidebar.radio("Escolha uma opção", ["🔢 Gerar jogos", "📊 Estatísticas", "🎯 Resultados reais"])
-
-jogos_disponiveis = {
-    "Mega-Sena": "megasena",
-    "Quina": "quina",
-    "Lotofácil": "lotofacil"
-}
-jogo_nome = st.sidebar.selectbox("Jogo:", list(jogos_disponiveis.keys()))
-jogo_api = jogos_disponiveis[jogo_nome]
-
-# --- ABA: Gerar Jogos ---
-if aba == "🔢 Gerar jogos":
-    st.subheader(f"Gerador inteligente de jogos - {jogo_nome}")
-
-    dezenas_freq = {}
-    resultado = buscar_resultado(jogo_api)
-    numeros = resultado.get("numeros") or resultado.get("listaDezenas") or resultado.get("dezenas") or []
-
-    if isinstance(numeros, str):
-        numeros = numeros.split(",")
-
-    for n in numeros:
-        dezenas_freq[n.strip()] = dezenas_freq.get(n.strip(), 0) + 1
-
-    qtd = st.slider("Quantos jogos deseja gerar?", 1, 20, 5)
-    jogos = [gerar_jogo(jogo_nome, dezenas_freq) for _ in range(qtd)]
-
-    for i, jogo in enumerate(jogos, 1):
-        st.write(f"Jogo {i}: {', '.join(str(n).zfill(2) for n in jogo)}")
-
-# --- ABA: Estatísticas ---
-elif aba == "📊 Estatísticas":
-    st.subheader(f"Frequência de dezenas - {jogo_nome}")
-
-    todos_resultados = []
-    for i in range(1, 31):  # Simula 30 concursos com o último resultado
-        resultado = buscar_resultado(jogo_api)
-        numeros = resultado.get("numeros") or resultado.get("listaDezenas") or resultado.get("dezenas") or []
-        if isinstance(numeros, str):
-            numeros = numeros.split(",")
-        todos_resultados.extend([n.strip() for n in numeros])
-
-    df_freq = pd.Series(todos_resultados).value_counts().sort_index()
-    st.bar_chart(df_freq)
-
-# --- ABA: Resultados reais ---
-elif aba == "🎯 Resultados reais":
-    st.subheader(f"Último resultado da {jogo_nome}")
-    dados = buscar_resultado(jogo_api)
-    if dados:
-        st.write(f"Concurso Nº: {dados.get('concurso')}")
-        st.write(f"Data do sorteio: {dados.get('data')}")
-        numeros = dados.get("numeros") or dados.get("listaDezenas") or dados.get("dezenas") or []
-        if isinstance(numeros, str):
-            numeros = numeros.split(",")
-        st.success(f"Números sorteados: {', '.join(str(n).strip() for n in numeros)}")
+# Exibir funcionalidade selecionada
+st.info(f"Você selecionou a funcionalidade: {func_selecionada}")
