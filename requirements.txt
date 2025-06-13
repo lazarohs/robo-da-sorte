@@ -1,7 +1,3 @@
 streamlit
-matplotlib
 pandas
-numpy
-requests
-reportlab
-python-telegram-bot
+matplotlib
