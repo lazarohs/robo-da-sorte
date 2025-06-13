@@ -1,7 +1,3 @@
-# Módulo de simulação de acertos
-
-def simular_apostas(jogo, apostas):
-    pass  # implementar simulação
 import streamlit as st
 import pandas as pd
 import random
@@ -13,9 +9,8 @@ def simular_apostas(jogo, aposta_usuario):
         st.warning("Simulação ainda disponível apenas para Mega-Sena.")
         return
 
-    # Simulação de concursos passados da Mega-Sena
     concursos_simulados = []
-    for i in range(1, 51):  # 50 concursos simulados
+    for i in range(1, 51):
         concurso = random.sample(range(1, 61), 6)
         concursos_simulados.append(sorted(concurso))
 
